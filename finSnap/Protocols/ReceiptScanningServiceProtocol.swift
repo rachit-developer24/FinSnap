@@ -6,3 +6,8 @@
 //
 
 import Foundation
+import UIKit
+
+protocol ReceiptScanningServiceProtocol{
+    func scanReceipt(from:UIImage)-> ScannedReceiptData
+}

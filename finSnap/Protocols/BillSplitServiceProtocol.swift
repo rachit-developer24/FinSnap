@@ -6,3 +6,6 @@
 //
 
 import Foundation
+protocol BillSplitServiceProtocol{
+    func billSplit(amount:Double,people:Int) throws -> Double
+}

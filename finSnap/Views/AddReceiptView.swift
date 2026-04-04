@@ -6,13 +6,206 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AddReceiptView: View {
+    @State private var name = ""
+    @State private var amount = ""
+    @State private var category: Category = .groceries
+    
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case name
+        case amount
+    }
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color.blue.opacity(0.12),
+                        Color.white,
+                        Color.green.opacity(0.08)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        headerSection
+                        formCard
+                        saveButton
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 40)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private extension AddReceiptView {
+    
+    var headerSection: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: 80, height: 80)
+                
+                Image(systemName: "receipt.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.blue)
+            }
+            
+            Text("Add a Receipt")
+                .font(.system(size: 30, weight: .bold))
+            
+            Text("Track your spending with a clean and simple entry.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+        }
+    }
+    
+    var formCard: some View {
+        VStack(spacing: 20) {
+            customTextField(
+                title: "Receipt Name",
+                placeholder: "Protein bars, Tesco order...",
+                text: $name,
+                icon: "text.alignleft"
+            )
+            .focused($focusedField, equals: .name)
+            .textInputAutocapitalization(.words)
+            
+            customTextField(
+                title: "Amount",
+                placeholder: "12.99",
+                text: $amount,
+                icon: "sterlingsign.circle"
+            )
+            .keyboardType(.decimalPad)
+            .focused($focusedField, equals: .amount)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Category")
+                    .font(.headline)
+                
+                Picker("Category", selection: $category) {
+                    ForEach(Category.allCases, id: \.self) { category in
+                        Text(category.rawValue.capitalized).tag(category)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+            }
+        }
+        .padding(20)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
+    }
+    
+    var saveButton: some View {
+        Button {
+            addReceipt()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.circle.fill")
+                Text("Save Receipt")
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
+        }
+        .disabled(!isValid)
+        .opacity(isValid ? 1 : 0.55)
+    }
+    
+    func customTextField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>,
+        icon: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+            
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .foregroundStyle(.secondary)
+                
+                TextField(placeholder, text: text)
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(0.06), lineWidth: 1)
+            )
+        }
+    }
+    
+    var isValid: Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return false }
+        guard let value = Double(amount), value > 0 else { return false }
+        return true
+    }
+    
+    func addReceipt() {
+        guard let value = Double(amount) else { return }
+        
+        let receipt = Receipt(
+            date: Date(),
+            category: category,
+            totalAmount: value,
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        
+        context.insert(receipt)
+        dismiss()
     }
 }
 
 #Preview {
     AddReceiptView()
+        .modelContainer(for: Receipt.self, inMemory: true)
 }

@@ -6,3 +6,14 @@
 //
 
 import Foundation
+
+enum Category:String,CaseIterable,Codable{
+    
+    case restaurantFood = "Restaurant Food"
+    case clothes = "Clothes"
+    case gas = "Gas"
+    case tickets = "Tickets"
+    case groceries = "Groceries"
+    
+}
+

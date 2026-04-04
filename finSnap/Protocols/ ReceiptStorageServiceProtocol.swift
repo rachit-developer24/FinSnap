@@ -6,3 +6,9 @@
 //
 
 import Foundation
+
+protocol  ReceiptStorageServiceProtocol{
+    func  save(receipt:Receipt)
+    func  delete(receipt:Receipt)
+    func  fetchReceipts() ->[Receipt]
+}
