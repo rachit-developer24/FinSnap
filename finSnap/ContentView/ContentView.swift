@@ -9,10 +9,11 @@ import SwiftUI
 import SwiftData
 struct ContentView: View {
     var body: some View {
-        ReceiptView()
+        MainTabView()
     }
 }
 #Preview {
     ContentView()
         .modelContainer(for: Receipt.self, inMemory: true)
+        .environment(ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService()))
 }

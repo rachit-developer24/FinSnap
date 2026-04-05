@@ -39,18 +39,21 @@ struct BillSplitView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
-            VStack(spacing: 28) {
-                headerSection
-                
-                resultCard
-                
-                inputSection
-                
-                calculateButton
-                
-                Spacer()
+            ScrollView{
+                VStack(spacing: 28) {
+                    headerSection
+                    
+                    resultCard
+                    
+                    inputSection
+                    
+                    calculateButton
+                    
+                    Spacer()
+                }
             }
+            .scrollIndicators(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .padding(.horizontal, 24)
             .padding(.top, 30)
             .onChange(of: viewModel.globalError) { oldValue, newValue in
