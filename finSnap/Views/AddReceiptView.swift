@@ -61,7 +61,6 @@ struct AddReceiptView: View {
 }
 
 private extension AddReceiptView {
-    
     var headerSection: some View {
         VStack(spacing: 10) {
             ZStack {

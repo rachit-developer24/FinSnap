@@ -12,10 +12,13 @@ import Observation
 
 class ReceiptViewModel{
     
+    var billSplitingError:BillSplitError?
+    var globalError:String?
     let receiptStorageService:ReceiptStorageServiceProtocol
     let billSplitService:BillSplitServiceProtocol
     let receiptScanningService:ReceiptScanningServiceProtocol
    
+    var splitAmountPerPerson:Double = 0
     
     init(receiptStorageService: ReceiptStorageServiceProtocol, billSplitService: BillSplitServiceProtocol, receiptScanningService: ReceiptScanningServiceProtocol) {
         self.receiptStorageService = receiptStorageService
@@ -30,5 +33,16 @@ class ReceiptViewModel{
         let receipt = Receipt(date:scannedReceipt.date , category: scannedReceipt.category, totalAmount: scannedReceipt.totalAmount, name: scannedReceipt.name)
     
         receiptStorageService.save(receipt: receipt)
+    }
+    
+    func billSplit(amount:Double,persons:Int){
+        do{
+            let amountPerPerson = try billSplitService.billSplit(amount: amount, people: persons)
+            self.splitAmountPerPerson = amountPerPerson
+        }catch let error as BillSplitError {
+            self.billSplitingError = error
+        }catch{
+            globalError = error.localizedDescription
+        }
     }
 }
