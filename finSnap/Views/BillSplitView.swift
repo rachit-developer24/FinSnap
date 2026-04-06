@@ -243,7 +243,7 @@ private extension BillSplitView {
             ReceiptViewModel(
                 receiptStorageService: ReceiptStorageService(),
                 billSplitService: BillSplitService(),
-                receiptScanningService: ReceiptScanningService()
+                receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService()
             )
         )
 }

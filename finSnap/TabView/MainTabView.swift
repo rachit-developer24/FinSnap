@@ -32,6 +32,6 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
-        .environment(ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService()))
+        .environment(ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService()))
         .modelContainer(for: Receipt.self,inMemory: true)
 }

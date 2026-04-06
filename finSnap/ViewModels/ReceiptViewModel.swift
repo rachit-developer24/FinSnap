@@ -14,16 +14,19 @@ class ReceiptViewModel{
     
     var billSplitingError:BillSplitError?
     var globalError:String?
+    var authenticationError:String?
     let receiptStorageService:ReceiptStorageServiceProtocol
     let billSplitService:BillSplitServiceProtocol
     let receiptScanningService:ReceiptScanningServiceProtocol
-   
+    let authenticationService:AuthenticationServiceProtocol
+    var isUnlocked:Bool = false
     var splitAmountPerPerson:Double = 0
     
-    init(receiptStorageService: ReceiptStorageServiceProtocol, billSplitService: BillSplitServiceProtocol, receiptScanningService: ReceiptScanningServiceProtocol) {
+    init(receiptStorageService: ReceiptStorageServiceProtocol, billSplitService: BillSplitServiceProtocol, receiptScanningService: ReceiptScanningServiceProtocol, authenticationService:AuthenticationServiceProtocol) {
         self.receiptStorageService = receiptStorageService
         self.billSplitService = billSplitService
         self.receiptScanningService = receiptScanningService
+        self.authenticationService = authenticationService
     }
     
     
@@ -45,6 +48,16 @@ class ReceiptViewModel{
             globalError = error.localizedDescription
         }
     }
+    func authenticate()async{
+        do{
+            self.isUnlocked = try await authenticationService.authenticate()
+        }catch{
+            self.authenticationError = error.localizedDescription
+        }
+    }
+    
+    
+    
     func spendingByCategory(receipts:[Receipt])->[Category:Double]{
         var spendingCategory = [Category:Double]()
         for category in Category.allCases{

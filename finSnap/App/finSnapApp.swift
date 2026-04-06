@@ -10,7 +10,7 @@ import SwiftData
 
 @main
 struct finSnapApp: App {
-    @State var viewModel = ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService())
+    @State var viewModel = ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService())
     var body: some Scene {
         WindowGroup {
             ContentView()

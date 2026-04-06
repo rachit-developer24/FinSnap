@@ -254,7 +254,7 @@ private extension InsightsView {
             ReceiptViewModel(
                 receiptStorageService: ReceiptStorageService(),
                 billSplitService: BillSplitService(),
-                receiptScanningService: ReceiptScanningService()
+                receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService()
             )
         )
         .modelContainer(for: Receipt.self, inMemory: true)
