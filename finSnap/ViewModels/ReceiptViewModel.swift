@@ -45,4 +45,15 @@ class ReceiptViewModel{
             globalError = error.localizedDescription
         }
     }
+    func spendingByCategory(receipts:[Receipt])->[Category:Double]{
+        var spendingCategory = [Category:Double]()
+        for category in Category.allCases{
+            let filtered = receipts.filter{$0.category == category}
+            let totalAmount = filtered.reduce(0){$0 + $1.totalAmount}
+            spendingCategory[category] = totalAmount
+        }
+        return spendingCategory
+    }
+
+   
 }

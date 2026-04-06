@@ -21,7 +21,7 @@ struct MainTabView: View {
                 Image(systemName: "square.split.2x1.fill")
                 Text("BillSplit")
             }
-            Text("")
+           InsightsView()
             .tabItem{
                 Image(systemName: "chart.bar.xaxis")
                 Text("Insights")
