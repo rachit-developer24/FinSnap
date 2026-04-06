@@ -9,6 +9,7 @@ import SwiftData
 
 struct ReceiptView: View {
     @Query(sort: \Receipt.date, order: .reverse) var receipts: [Receipt]
+    @Environment(\.modelContext) var context
     @State var isPresented:Bool = false
     var body: some View {
         NavigationStack {
@@ -112,20 +113,26 @@ private extension ReceiptView {
     }
     
     var receiptsListView: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                ForEach(receipts) { receipt in
-                    ReceiptCardView(receipt: receipt)
-                }
+        List {
+            ForEach(receipts) { receipt in
+                ReceiptCardView(receipt: receipt)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6))
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            context.delete(receipt)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
         }
+        .listStyle(.plain)
         .scrollIndicators(.hidden)
     }
+    
 }
-
-
 #Preview {
     ReceiptView()
         .modelContainer(for: Receipt.self,inMemory: true)
