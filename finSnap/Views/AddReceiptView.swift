@@ -4,21 +4,23 @@
 //
 //  Created by Rachit Sharma on 04/04/2026.
 //
-
 import SwiftUI
 import SwiftData
 import PhotosUI
+
 struct AddReceiptView: View {
     @State private var name = ""
     @State private var amount = ""
     @State private var category: Category = .groceries
-    @State var photo:PhotosPickerItem?
-    @State private var isPresented:Bool = false
+    
+    @State private var photo: PhotosPickerItem?
+    @State private var isPhotoPickerPresented = false
+    @State private var isCameraPresented = false
+    @State private var cameraImage: UIImage?
+    
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @Environment(ReceiptViewModel.self) var viewModel
-    @State private var cameraImage: UIImage?
-    @State var isCameraPresented:Bool = false
+    @Environment(ReceiptViewModel.self) private var viewModel
     
     @FocusState private var focusedField: Field?
     
@@ -30,37 +32,25 @@ struct AddReceiptView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color.blue.opacity(0.12),
-                        Color.white,
-                        Color.green.opacity(0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                backgroundView
                 
                 ScrollView {
                     VStack(spacing: 24) {
                         headerSection
                         formCard
-                        saveButton
-                        LibraryButton
-                        cameraButton
+                        imagePreviewCard
+                        actionSection
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
                     .padding(.bottom, 40)
                 }
-                if viewModel.isLoading{
-                    ZStack{
-                        Color.black.opacity(0.4)
-                        ProgressView()
-                    }
-                    .ignoresSafeArea()
+                
+                if viewModel.isLoading {
+                    loadingOverlay
                 }
             }
+            .navigationTitle("New Receipt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -69,57 +59,88 @@ struct AddReceiptView: View {
                     }
                 }
             }
-            .photosPicker(isPresented:  $isPresented, selection: $photo)
-            .sheet(isPresented: $isCameraPresented, content: {
+            .photosPicker(isPresented: $isPhotoPickerPresented, selection: $photo)
+            .sheet(isPresented: $isCameraPresented) {
                 CameraPickerView(image: $cameraImage)
                     .ignoresSafeArea()
-            })
-            .onChange(of:photo) { oldValue, newValue in
-                Task{
-                    await viewModel.imageUploader(item: photo)
+            }
+            .onChange(of: photo) { _, newValue in
+                guard newValue != nil else { return }
+                Task {
+                    await viewModel.imageUploader(item: newValue)
                 }
             }
-            .onChange(of: viewModel.scannedName) { oldValue, newValue in
-                    self.name = newValue
+            .onChange(of: viewModel.scannedName) { _, newValue in
+                name = newValue
             }
-            .onChange(of: viewModel.scannedTotalAmount) { oldValue, newValue in
-                    self.amount = String(newValue)
-                }
-            .onChange(of: cameraImage) { oldValue, newValue in
+            .onChange(of: viewModel.scannedTotalAmount) { _, newValue in
+                amount = newValue > 0 ? String(format: "%.2f", newValue) : ""
+            }
+            .onChange(of: cameraImage) { _, newValue in
                 guard let image = newValue else { return }
                 Task {
                     await viewModel.imageUploaderFromCamera(image: image)
-                        
-                    
                 }
             }
-
-            
         }
     }
 }
 
 private extension AddReceiptView {
+    
+    var backgroundView: some View {
+        LinearGradient(
+            colors: [
+                Color.blue.opacity(0.14),
+                Color.white,
+                Color.green.opacity(0.08)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+    
+    var loadingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 14) {
+                ProgressView()
+                    .scaleEffect(1.1)
+                
+                Text("Scanning receipt...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 22))
+        }
+    }
+    
     var headerSection: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             ZStack {
                 Circle()
                     .fill(Color.blue.opacity(0.12))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 84, height: 84)
                 
                 Image(systemName: "receipt.fill")
-                    .font(.system(size: 30))
+                    .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.blue)
             }
             
             Text("Add a Receipt")
                 .font(.system(size: 30, weight: .bold))
             
-            Text("Track your spending with a clean and simple entry.")
+            Text("Add it manually, pick from your library, or scan it with the camera.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 16)
         }
     }
     
@@ -133,6 +154,7 @@ private extension AddReceiptView {
             )
             .focused($focusedField, equals: .name)
             .textInputAutocapitalization(.words)
+            .submitLabel(.next)
             
             customTextField(
                 title: "Amount",
@@ -169,75 +191,52 @@ private extension AddReceiptView {
         .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
     }
     
-    var saveButton: some View {
-        Button {
-            addReceipt()
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "checkmark.circle.fill")
-                Text("Save Receipt")
-                    .fontWeight(.semibold)
+    @ViewBuilder
+    var imagePreviewCard: some View {
+        if let image = cameraImage ?? viewModel.uiImage {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Selected Image")
+                    .font(.headline)
+                
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 180)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                LinearGradient(
-                    colors: [Color.blue, Color.blue.opacity(0.8)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
-        }
-        .disabled(!isValid)
-        .opacity(isValid ? 1 : 0.55)
-    }
-    var LibraryButton: some View {
-        Button {
-           isPresented = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "photo")
-                Text("Library")
-                    .fontWeight(.semibold)
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                LinearGradient(
-                    colors: [Color.blue, Color.blue.opacity(0.8)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
+            .padding(20)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 28))
+            .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
         }
     }
-    var cameraButton: some View {
-        Button {
-           isCameraPresented = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "camera")
-                Text("Camera")
-                    .fontWeight(.semibold)
+    
+    var actionSection: some View {
+        VStack(spacing: 14) {
+            primaryButton(
+                title: "Save Receipt",
+                systemImage: "checkmark.circle.fill",
+                isDisabled: !isValid
+            ) {
+                addReceipt()
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                LinearGradient(
-                    colors: [Color.blue, Color.blue.opacity(0.8)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18))
-            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
+            
+            HStack(spacing: 12) {
+                secondaryActionButton(
+                    title: "Library",
+                    systemImage: "photo.on.rectangle"
+                ) {
+                    isPhotoPickerPresented = true
+                }
+                
+                secondaryActionButton(
+                    title: "Camera",
+                    systemImage: "camera.fill"
+                ) {
+                    isCameraPresented = true
+                }
+            }
         }
     }
     
@@ -254,6 +253,7 @@ private extension AddReceiptView {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .foregroundStyle(.secondary)
+                    .frame(width: 18)
                 
                 TextField(placeholder, text: text)
             }
@@ -267,6 +267,59 @@ private extension AddReceiptView {
         }
     }
     
+    func primaryButton(
+        title: String,
+        systemImage: String,
+        isDisabled: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                Text(title)
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
+            .opacity(isDisabled ? 0.55 : 1)
+        }
+        .disabled(isDisabled)
+    }
+    
+    func secondaryActionButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                Text(title)
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.blue)
+            .frame(maxWidth: .infinity)
+            .frame(height: 54)
+            .background(Color.white.opacity(0.9))
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.blue.opacity(0.12), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 6)
+        }
+    }
+    
     var isValid: Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return false }
@@ -276,7 +329,12 @@ private extension AddReceiptView {
     
     func addReceipt() {
         guard let value = Double(amount) else { return }
-        viewModel.addReceipt(name: name, amount: value, category: category, context: context)
+        viewModel.addReceipt(
+            name: name,
+            amount: value,
+            category: category,
+            context: context
+        )
         dismiss()
     }
 }
@@ -284,6 +342,16 @@ private extension AddReceiptView {
 #Preview {
     AddReceiptView()
         .modelContainer(for: Receipt.self, inMemory: true)
-        .environment(ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService()))
+        .environment(
+            ReceiptViewModel(
+                receiptStorageService: ReceiptStorageService(),
+                billSplitService: BillSplitService(),
+                receiptScanningService: ReceiptScanningService(),
+                authenticationService: AuthenticationService()
+            )
+        )
 }
+  
+
+
 
