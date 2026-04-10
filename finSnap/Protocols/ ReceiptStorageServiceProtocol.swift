@@ -6,9 +6,9 @@
 //
 
 import Foundation
-
+import SwiftData
 protocol  ReceiptStorageServiceProtocol{
-    func  save(receipt:Receipt)
+    func  save(receipt:Receipt,context:ModelContext)
     func  delete(receipt:Receipt)
     func  fetchReceipts() ->[Receipt]
 }

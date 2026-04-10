@@ -8,6 +8,9 @@
 import Foundation
 import UIKit
 import Observation
+import PhotosUI
+import _PhotosUI_SwiftUI
+import SwiftData
 @Observable
 
 class ReceiptViewModel{
@@ -21,6 +24,12 @@ class ReceiptViewModel{
     let authenticationService:AuthenticationServiceProtocol
     var isUnlocked:Bool = false
     var splitAmountPerPerson:Double = 0
+    var uiImage:UIImage?
+    var scannedName:String = ""
+    var scannedTotalAmount = Double()
+    var isLoading = false
+    
+
     
     init(receiptStorageService: ReceiptStorageServiceProtocol, billSplitService: BillSplitServiceProtocol, receiptScanningService: ReceiptScanningServiceProtocol, authenticationService:AuthenticationServiceProtocol) {
         self.receiptStorageService = receiptStorageService
@@ -30,12 +39,13 @@ class ReceiptViewModel{
     }
     
     
+    
+    
     func receiptScanning(){
         let scannedReceipt = receiptScanningService.scanReceipt(from: UIImage())
         
         let receipt = Receipt(date:scannedReceipt.date , category: scannedReceipt.category, totalAmount: scannedReceipt.totalAmount, name: scannedReceipt.name)
     
-        receiptStorageService.save(receipt: receipt)
     }
     
     func billSplit(amount:Double,persons:Int){
@@ -56,7 +66,34 @@ class ReceiptViewModel{
         }
     }
     
+    func addReceipt(name:String,amount:Double,category:Category,context:ModelContext){
+        let receipt = Receipt(date:Date() , category: category, totalAmount: amount, name:name)
+        receiptStorageService.save(receipt: receipt, context: context)
+    }
     
+    
+    func imageUploader(item:PhotosPickerItem?) async{
+        guard let item = item else{return}
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+        guard let data =  try? await item.loadTransferable(type: Data.self) else{return}
+        guard let image = UIImage(data: data)else{return}
+        self.uiImage = image
+        let scannedData = receiptScanningService.scanReceipt(from: image)
+        self.scannedName = scannedData.name
+        self.scannedTotalAmount = scannedData.totalAmount
+    }
+    func imageUploaderFromCamera(image:UIImage)async{
+        isLoading = true
+        defer {
+            isLoading = false
+        }
+        let scannedData = receiptScanningService.scanReceipt(from: image)
+        self.scannedName = scannedData.name
+        self.scannedTotalAmount = scannedData.totalAmount
+    }
     
     func spendingByCategory(receipts:[Receipt])->[Category:Double]{
         var spendingCategory = [Category:Double]()
@@ -68,5 +105,7 @@ class ReceiptViewModel{
         return spendingCategory
     }
 
+    
+  
    
 }

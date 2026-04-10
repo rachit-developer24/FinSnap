@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "finsnap_icon.png.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

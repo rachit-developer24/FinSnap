@@ -4,10 +4,12 @@
 //
 //  Created by Rachit Sharma on 02/04/2026.
 //
-
+import SwiftData
 import Foundation
 
 class ReceiptStorageService:ReceiptStorageServiceProtocol{
+    
+    
     func delete(receipt: Receipt) {
         
     }
@@ -16,7 +18,7 @@ class ReceiptStorageService:ReceiptStorageServiceProtocol{
      return   [Receipt(date: Date(), category: .clothes, totalAmount: 66.66, name: "Primark")]
     }
     
-    func save(receipt: Receipt) {
-        
+    func save(receipt: Receipt,context:ModelContext) {
+        context.insert(receipt)
     }
 }

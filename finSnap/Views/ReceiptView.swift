@@ -10,6 +10,7 @@ import SwiftData
 struct ReceiptView: View {
     @Query(sort: \Receipt.date, order: .reverse) var receipts: [Receipt]
     @Environment(\.modelContext) var context
+    @Environment(ReceiptViewModel.self)var viewModel
     @State var isPresented:Bool = false
     var body: some View {
         NavigationStack {
@@ -33,6 +34,7 @@ struct ReceiptView: View {
             }
             .sheet(isPresented: $isPresented, content: {
                 AddReceiptView()
+                    .environment(viewModel)
             })
             .navigationTitle("Receipts")
             .toolbar{
@@ -136,4 +138,5 @@ private extension ReceiptView {
 #Preview {
     ReceiptView()
         .modelContainer(for: Receipt.self,inMemory: true)
+        .environment(ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService()))
 }

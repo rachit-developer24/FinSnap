@@ -7,14 +7,18 @@
 
 import SwiftUI
 import SwiftData
-
+import PhotosUI
 struct AddReceiptView: View {
     @State private var name = ""
     @State private var amount = ""
     @State private var category: Category = .groceries
-    
+    @State var photo:PhotosPickerItem?
+    @State private var isPresented:Bool = false
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(ReceiptViewModel.self) var viewModel
+    @State private var cameraImage: UIImage?
+    @State var isCameraPresented:Bool = false
     
     @FocusState private var focusedField: Field?
     
@@ -42,10 +46,19 @@ struct AddReceiptView: View {
                         headerSection
                         formCard
                         saveButton
+                        LibraryButton
+                        cameraButton
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
                     .padding(.bottom, 40)
+                }
+                if viewModel.isLoading{
+                    ZStack{
+                        Color.black.opacity(0.4)
+                        ProgressView()
+                    }
+                    .ignoresSafeArea()
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -56,6 +69,32 @@ struct AddReceiptView: View {
                     }
                 }
             }
+            .photosPicker(isPresented:  $isPresented, selection: $photo)
+            .sheet(isPresented: $isCameraPresented, content: {
+                CameraPickerView(image: $cameraImage)
+                    .ignoresSafeArea()
+            })
+            .onChange(of:photo) { oldValue, newValue in
+                Task{
+                    await viewModel.imageUploader(item: photo)
+                }
+            }
+            .onChange(of: viewModel.scannedName) { oldValue, newValue in
+                    self.name = newValue
+            }
+            .onChange(of: viewModel.scannedTotalAmount) { oldValue, newValue in
+                    self.amount = String(newValue)
+                }
+            .onChange(of: cameraImage) { oldValue, newValue in
+                guard let image = newValue else { return }
+                Task {
+                    await viewModel.imageUploaderFromCamera(image: image)
+                        
+                    
+                }
+            }
+
+            
         }
     }
 }
@@ -155,6 +194,52 @@ private extension AddReceiptView {
         .disabled(!isValid)
         .opacity(isValid ? 1 : 0.55)
     }
+    var LibraryButton: some View {
+        Button {
+           isPresented = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "photo")
+                Text("Library")
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
+        }
+    }
+    var cameraButton: some View {
+        Button {
+           isCameraPresented = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "camera")
+                Text("Camera")
+                    .fontWeight(.semibold)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    colors: [Color.blue, Color.blue.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .shadow(color: .blue.opacity(0.25), radius: 12, x: 0, y: 8)
+        }
+    }
     
     func customTextField(
         title: String,
@@ -191,15 +276,7 @@ private extension AddReceiptView {
     
     func addReceipt() {
         guard let value = Double(amount) else { return }
-        
-        let receipt = Receipt(
-            date: Date(),
-            category: category,
-            totalAmount: value,
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines)
-        )
-        
-        context.insert(receipt)
+        viewModel.addReceipt(name: name, amount: value, category: category, context: context)
         dismiss()
     }
 }
@@ -207,4 +284,6 @@ private extension AddReceiptView {
 #Preview {
     AddReceiptView()
         .modelContainer(for: Receipt.self, inMemory: true)
+        .environment(ReceiptViewModel(receiptStorageService: ReceiptStorageService(), billSplitService: BillSplitService(), receiptScanningService: ReceiptScanningService(), authenticationService: AuthenticationService()))
 }
+
