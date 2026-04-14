@@ -4,11 +4,14 @@ A smart iOS receipt scanner that uses OCR to extract totals, categorise spending
 
 ## Screenshots
 
-<!-- Add your screenshots here -->
-<!-- ![Home](screenshots/home.png) -->
-<!-- ![Scan](screenshots/scan.png) -->
-<!-- ![Insights](screenshots/insights.png) -->
-<!-- ![Bill Split](screenshots/billsplit.png) -->
+<img width="645" height="1398" alt="IMG_9953 2" src="https://github.com/user-attachments/assets/d9d5bb78-93a0-4f75-b003-86e26c6fd4d7" />
+<img width="645" height="1398" alt="IMG_9954 2" src="https://github.com/user-attachments/assets/bc17b407-b4a8-446c-9cea-1194aee107b8" />
+<img width="645" height="1398" alt="IMG_9955 2" src="https://github.com/user-attachments/assets/bf6a0c51-5732-4490-b6df-894d8bd0f108" />
+<img width="645" height="1398" alt="IMG_9956 2" src="https://github.com/user-attachments/assets/d2a4f2a0-5859-46f6-b9bc-1c2ab1e1e4bd" />
+<img width="645" height="1398" alt="IMG_9957 2" src="https://github.com/user-attachments/assets/6fc7e93e-0df9-4035-9023-f112c7afd749" />
+<img width="645" height="1398" alt="IMG_9958 2" src="https://github.com/user-attachments/assets/7ba17cc8-6efa-41e3-ba9b-71e6b85f7fec" />
+<img width="645" height="1398" alt="IMG_9959 2" src="https://github.com/user-attachments/assets/fc2117f0-84b8-43fa-be22-2344fd280acc" />
+
 
 ## Features
 
