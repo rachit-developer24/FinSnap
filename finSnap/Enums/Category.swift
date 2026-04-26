@@ -14,6 +14,7 @@ enum Category:String,CaseIterable,Codable{
     case gas = "Gas"
     case tickets = "Tickets"
     case groceries = "Groceries"
+    case medicines = "Medicines"
     
 }
 

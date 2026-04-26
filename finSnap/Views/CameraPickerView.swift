@@ -26,19 +26,15 @@ struct CameraPickerView: UIViewControllerRepresentable {
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             picker.dismiss(animated: true)
         }
-
-        
         
     }
-
+    
     @Binding var image: UIImage?
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
     
-  
- 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera

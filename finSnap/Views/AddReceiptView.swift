@@ -55,7 +55,9 @@ struct AddReceiptView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") {
+                        resetScanState()
                         dismiss()
+                        
                     }
                 }
             }
@@ -67,7 +69,7 @@ struct AddReceiptView: View {
             .onChange(of: photo) { _, newValue in
                 guard newValue != nil else { return }
                 Task {
-                    await viewModel.imageUploader(item: newValue)
+                    try await viewModel.imageUploader(item: newValue)
                 }
             }
             .onChange(of: viewModel.scannedName) { _, newValue in
@@ -220,6 +222,7 @@ private extension AddReceiptView {
                 isDisabled: !isValid
             ) {
                 addReceipt()
+                viewModel.uiImage = nil
             }
             
             HStack(spacing: 12) {
@@ -227,6 +230,7 @@ private extension AddReceiptView {
                     title: "Library",
                     systemImage: "photo.on.rectangle"
                 ) {
+                    resetScanState()
                     isPhotoPickerPresented = true
                 }
                 
@@ -234,6 +238,7 @@ private extension AddReceiptView {
                     title: "Camera",
                     systemImage: "camera.fill"
                 ) {
+                    resetScanState()
                     isCameraPresented = true
                 }
             }
@@ -320,6 +325,14 @@ private extension AddReceiptView {
         }
     }
     
+    func resetScanState() {
+        viewModel.scannedName = ""
+        viewModel.scannedTotalAmount = 0
+        viewModel.uiImage = nil
+        name = ""
+        amount = ""
+        cameraImage = nil
+    }
     var isValid: Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return false }

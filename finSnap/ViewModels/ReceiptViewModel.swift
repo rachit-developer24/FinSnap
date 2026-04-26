@@ -28,6 +28,7 @@ class ReceiptViewModel{
     var scannedName:String = ""
     var scannedTotalAmount = Double()
     var isLoading = false
+    var receiptScanningError:String?
     
 
     
@@ -72,18 +73,24 @@ class ReceiptViewModel{
     }
     
     
-    func imageUploader(item:PhotosPickerItem?) async{
-        guard let item = item else{return}
-        isLoading = true
-        defer {
-            isLoading = false
+    func imageUploader(item:PhotosPickerItem?) async throws{
+        do{
+            guard let item = item else{return}
+            isLoading = true
+            defer {
+                isLoading = false
+            }
+            guard let data =  try? await item.loadTransferable(type: Data.self) else{return}
+            guard let image = UIImage(data: data)else{throw ScanningError.imageLoadFailed}
+            self.uiImage = image
+            let scannedData = receiptScanningService.scanReceipt(from: image)
+            self.scannedName = scannedData.name
+            self.scannedTotalAmount = scannedData.totalAmount
+        }catch let error as ScanningError{
+            self.receiptScanningError = error.localizedDescription
+        }catch{
+            self.globalError = error.localizedDescription
         }
-        guard let data =  try? await item.loadTransferable(type: Data.self) else{return}
-        guard let image = UIImage(data: data)else{return}
-        self.uiImage = image
-        let scannedData = receiptScanningService.scanReceipt(from: image)
-        self.scannedName = scannedData.name
-        self.scannedTotalAmount = scannedData.totalAmount
     }
     func imageUploaderFromCamera(image:UIImage)async{
         isLoading = true

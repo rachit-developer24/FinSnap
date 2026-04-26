@@ -65,6 +65,8 @@ struct ReceiptCardView: View {
             return "fork.knife"
         case .gas:
             return "fuelpump.fill"
+        case .medicines:
+            return "pills.fill"
         }
     }
     
@@ -80,6 +82,8 @@ struct ReceiptCardView: View {
             return .purple
         case .gas:
             return .black
+        case .medicines:
+            return .blue
         }
     }
 }
